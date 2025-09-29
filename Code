@@ -1,0 +1,95 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Papa from "papaparse";
+
+export default function HorarioApp() {
+  const [constancia, setConstancia] = useState([]);
+  const [oferta, setOferta] = useState([]);
+  const [horario, setHorario] = useState([]);
+
+  // Cargar archivos CSV
+  const handleFileUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: true,
+      complete: (results) => {
+        if (type === "constancia") setConstancia(results.data);
+        if (type === "oferta") setOferta(results.data);
+      },
+    });
+  };
+
+  // Generar horario
+  const generarHorario = () => {
+    const resultado = constancia.map((materia) => {
+      const info = oferta.find(
+        (o) =>
+          o.Materia.trim() === materia.Materia.trim() &&
+          o.Seccion.trim() === materia.Seccion.trim()
+      );
+      return info
+        ? {
+            materia: materia.Materia,
+            seccion: info.Seccion,
+            hora: info.Hora,
+            semana: info.Semana,
+            profesor: info.Profesor,
+            dias: info.Dias,
+          }
+        : null;
+    });
+    setHorario(resultado.filter(Boolean));
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Generador de Horario de Clases</h1>
+
+      <div className="flex gap-4">
+        <div>
+          <label className="block font-semibold">Subir constancia (CSV)</label>
+          <input type="file" accept=".csv" onChange={(e) => handleFileUpload(e, "constancia")} />
+        </div>
+        <div>
+          <label className="block font-semibold">Subir oferta académica (CSV)</label>
+          <input type="file" accept=".csv" onChange={(e) => handleFileUpload(e, "oferta")} />
+        </div>
+      </div>
+
+      <Button onClick={generarHorario} className="mt-2">Generar Horario</Button>
+
+      {horario.length > 0 && (
+        <Card className="mt-4">
+          <CardContent>
+            <table className="w-full text-sm border">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="border p-2">Hora</th>
+                  <th className="border p-2">Materia</th>
+                  <th className="border p-2">Sección</th>
+                  <th className="border p-2">Semana</th>
+                  <th className="border p-2">Profesor</th>
+                  <th className="border p-2">Días</th>
+                </tr>
+              </thead>
+              <tbody>
+                {horario.map((h, idx) => (
+                  <tr key={idx}>
+                    <td className="border p-2">{h.hora}</td>
+                    <td className="border p-2">{h.materia}</td>
+                    <td className="border p-2">{h.seccion}</td>
+                    <td className="border p-2">{h.semana}</td>
+                    <td className="border p-2">{h.profesor}</td>
+                    <td className="border p-2">{h.dias}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
